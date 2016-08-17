@@ -45,6 +45,8 @@ public struct JPSJsonPatcher {
         case ValidationError(message: String?)
         /** ArrayIndexOutOfBounds: tried to add an element to an array position > array size + 1. See: http://tools.ietf.org/html/rfc6902#section-4.1 */
         case ArrayIndexOutOfBounds
+        /** InvalidDictionaryKey: tried to remove a dictionary key that doesn't exist in the JSON dictionary */
+        case InvalidDictionaryKey
         /** InvalidJson: invalid `JSON` provided. */
         case InvalidJson
     }
@@ -67,7 +69,7 @@ extension JPSJsonPatcher {
                 jsonAsDictionary[key] = operation.value.object
                 newJson.object = jsonAsDictionary
             } else if var jsonAsArray = traversedJson.arrayObject, let indexString = pointer.pointerValue.first as? String, let index = Int(indexString) {
-                guard index <= jsonAsArray.count else {
+                guard 0 <= index && index <= jsonAsArray.count else {
                     throw JPSJsonPatcherApplyError.ArrayIndexOutOfBounds
                 }
                 jsonAsArray.insert(operation.value.object, atIndex: index)
@@ -82,10 +84,15 @@ extension JPSJsonPatcher {
             (traversedJson: JSON, pointer: JPSJsonPointer) in
             var newJson = traversedJson
             if var dictionary = traversedJson.dictionaryObject, let key = pointer.pointerValue.first as? String {
-                dictionary.removeValueForKey(key)
+                guard dictionary.removeValueForKey(key) != nil else {
+                    throw JPSJsonPatcherApplyError.InvalidDictionaryKey
+                }
                 newJson.object = dictionary
             }
             if var arr = traversedJson.arrayObject, let indexString = pointer.pointerValue.first as? String, let index = Int(indexString) {
+                guard 0 <= index && index < arr.count else {
+                    throw JPSJsonPatcherApplyError.ArrayIndexOutOfBounds
+                }
                 arr.removeAtIndex(index)
                 newJson.object = arr
             }
@@ -98,10 +105,17 @@ extension JPSJsonPatcher {
             (traversedJson: JSON, pointer: JPSJsonPointer) in
             var newJson = traversedJson
             if var dictionary = traversedJson.dictionaryObject, let key = pointer.pointerValue.first as? String {
+                // Target location must exist to be valid
+                guard dictionary.keys.contains(key) else {
+                    throw JPSJsonPatcherApplyError.InvalidDictionaryKey
+                }
                 dictionary[key] = operation.value.object
                 newJson.object = dictionary
             }
             if var arr = traversedJson.arrayObject, let indexString = pointer.pointerValue.first as? String, let index = Int(indexString) {
+                guard 0 <= index && index < arr.count else {
+                    throw JPSJsonPatcherApplyError.ArrayIndexOutOfBounds
+                }
                 arr[index] = operation.value.object
                 newJson.object = arr
             }
@@ -145,6 +159,9 @@ extension JPSJsonPatcher {
             (traversedJson: JSON, pointer: JPSJsonPointer) in
             var jsonToAdd = traversedJson[pointer.pointerValue]
             if traversedJson.type == .Array, let indexString = pointer.pointerValue.first as? String, let index = Int(indexString) {
+                guard 0 <= index && index < traversedJson.count else {
+                    throw JPSJsonPatcherApplyError.ArrayIndexOutOfBounds
+                }
                 jsonToAdd = traversedJson[index]
             }
             let addOperation = JPSOperation(type: JPSOperation.JPSOperationType.Add, pointer: operation.pointer, value: jsonToAdd, from: operation.from)
