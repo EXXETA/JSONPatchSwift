@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'JSONPatchSwift_Example' do
+  pod 'JSONPatchSwift', :path => '../'
+
+  target 'JSONPatchSwift_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end

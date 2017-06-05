@@ -1,0 +1,19 @@
+PODS:
+  - JSONPatchSwift (0.1.0):
+    - SwiftyJSON (~> 3.1.4)
+  - SwiftyJSON (3.1.4)
+
+DEPENDENCIES:
+  - JSONPatchSwift (from `../`)
+
+EXTERNAL SOURCES:
+  JSONPatchSwift:
+    :path: ../
+
+SPEC CHECKSUMS:
+  JSONPatchSwift: 0dd457a1811cbbed4a11767518fcf429f71d39a5
+  SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
+
+PODFILE CHECKSUM: 938f3744bded03894acc6277c0029903fcae925f
+
+COCOAPODS: 1.2.1
